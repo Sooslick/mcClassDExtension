@@ -25,13 +25,13 @@ public class ClassDExtension extends JavaPlugin {
             YamlConfiguration yaml = new YamlConfiguration();
             yaml.load(new InputStreamReader(e.getResource("plugin.yml")));
             String v = yaml.getString("version", "unknown");
-            instance.getLogger().info("§1Hooked the ClassD plugin of version " + v);
+            instance.getLogger().info("Hooked the ClassD plugin of version " + v);
             Bukkit.getScheduler().cancelTask(jobId);
         } catch (NoClassDefFoundError e) {
-            instance.getLogger().warning("§4Cannot hook ClassD plugin: not loaded");
+            instance.getLogger().warning("Cannot hook ClassD plugin: not loaded");
             retryOrDisable();
         } catch (NullPointerException | IOException | InvalidConfigurationException e) {
-            instance.getLogger().warning("§4Cannot hook ClassD plugin: it seems to be corrupted");
+            instance.getLogger().warning("Cannot hook ClassD plugin: it seems to be corrupted");
             retryOrDisable();
         }
     };
@@ -47,11 +47,11 @@ public class ClassDExtension extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
         jobId = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, job, 2, 200);
-        getLogger().info("§1ClassD Extension enabled.");
+        getLogger().info("ClassD Extension enabled.");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("§4ClassD Extension disabled.");
+        getLogger().info("ClassD Extension disabled.");
     }
 }

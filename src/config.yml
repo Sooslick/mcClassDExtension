@@ -1,4 +1,5 @@
 ## DEFENSE GAMEMODE
 playArea: 1000
-totalBlocks: 7
+totalOverworldBlocks: 4
+totalNetherBlocks: 3
 requiredBlocks: 5

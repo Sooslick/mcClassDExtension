@@ -2,6 +2,7 @@ package ru.sooslick.outlawExtension.gamemode.dbd;
 
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -29,8 +30,15 @@ public class DbdExtensionListener implements Listener {
                     engine.triggerEndgame(true);
                 else
                     Bukkit.broadcastMessage("§cVictim just destroyed one of the targets! §6" + newScore + " blocks left");
-                base.targetsMap.get(b).remove();
+                //find entity by weak reference
+                LivingEntity rmEnt = base.targetsMap.get(b);
+                LivingEntity detectedEntity = (LivingEntity) b.getWorld().getNearbyEntities(b.getLocation(), 1, 1, 1).stream()
+                        .filter(ent -> ent.getUniqueId().equals(rmEnt.getUniqueId()))
+                        .findFirst()
+                        .orElse(rmEnt);
+                detectedEntity.remove();
                 base.targetsMap.remove(b);
+                base.forceCompassUpdate();
                 break;
             }
         }

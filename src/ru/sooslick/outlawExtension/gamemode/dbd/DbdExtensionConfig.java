@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DbdExtensionConfig implements GameModeConfig {
-    public int playArea, totalBlocks, requiredBlocks;
+    public int playArea, totalOverworldBlocks, totalNetherBlocks, requiredBlocks;
     boolean firstRead = true;
 
     @Override
@@ -19,24 +19,29 @@ public class DbdExtensionConfig implements GameModeConfig {
         FileConfiguration cfg = ClassDExtension.getInstance().getConfig();
 
         int oldPlayArea = playArea;
-        int oldTotalBlocks = totalBlocks;
+        int oldTotalOverworldBlocks = totalOverworldBlocks;
+        int oldTotalNetherBlocks = totalNetherBlocks;
         int oldRequiredBlocks = requiredBlocks;
 
         //read
         playArea = cfg.getInt("playArea", 1000);
-        totalBlocks = cfg.getInt("totalBlocks", 7);
+        totalOverworldBlocks = cfg.getInt("totalOverworldBlocks", 4);
+        totalNetherBlocks = cfg.getInt("totalNetherBlocks", 3);
         requiredBlocks = cfg.getInt("requiredBlocks", 5);
 
         //validate
         int spawnArea = Cfg.spawnDistance + Cfg.spawnRadius;
         if (playArea < spawnArea) playArea = spawnArea + 15;
-        if (totalBlocks <= 0) totalBlocks = 1;
-        if (requiredBlocks > totalBlocks) requiredBlocks = totalBlocks;
+        if (totalOverworldBlocks < 0) totalOverworldBlocks = 0;
+        if (totalNetherBlocks < 0) totalNetherBlocks = 0;
+        if (totalOverworldBlocks + totalNetherBlocks == 0) totalOverworldBlocks = 1;
+        if (requiredBlocks > totalOverworldBlocks + totalNetherBlocks) requiredBlocks = totalOverworldBlocks + totalNetherBlocks;
 
         //changes detection
         if (!firstRead) {
             if (oldPlayArea != playArea) Bukkit.broadcastMessage(String.format(Messages.CONFIG_MODIFIED, "playArea", playArea));
-            if (oldTotalBlocks != totalBlocks) Bukkit.broadcastMessage(String.format(Messages.CONFIG_MODIFIED, "totalBlocks", totalBlocks));
+            if (oldTotalOverworldBlocks != totalOverworldBlocks) Bukkit.broadcastMessage(String.format(Messages.CONFIG_MODIFIED, "totalOverworldBlocks", totalOverworldBlocks));
+            if (oldTotalNetherBlocks != totalNetherBlocks) Bukkit.broadcastMessage(String.format(Messages.CONFIG_MODIFIED, "totalNetherBlocks", totalNetherBlocks));
             if (oldRequiredBlocks != requiredBlocks) Bukkit.broadcastMessage(String.format(Messages.CONFIG_MODIFIED, "requiredBlocks", requiredBlocks));
         }
         firstRead = false;
@@ -46,7 +51,8 @@ public class DbdExtensionConfig implements GameModeConfig {
     public String getValueOf(String field) {
         switch (field.toLowerCase()) {
             case "playarea": return String.valueOf(playArea);
-            case "totalblocks": return String.valueOf(totalBlocks);
+            case "totaloverworldblocks": return String.valueOf(totalOverworldBlocks);
+            case "totalnetherblocks": return String.valueOf(totalNetherBlocks);
             case "requiredblocks": return String.valueOf(requiredBlocks);
             default: return null;
         }
@@ -54,6 +60,6 @@ public class DbdExtensionConfig implements GameModeConfig {
 
     @Override
     public List<String> availableParameters() {
-        return Arrays.asList("playArea", "totalBlocks", "requiredBlocks");
+        return Arrays.asList("playArea", "totalOverworldBlocks", "totalNetherBlocks", "requiredBlocks");
     }
 }

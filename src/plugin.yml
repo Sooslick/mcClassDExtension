@@ -1,8 +1,8 @@
 name: ClassDExtension
-version: 0.7
+version: 0.7.1
 description: Manhunt gamemode extension
 author: sooslick
 main: ru.sooslick.outlawExtension.ClassDExtension
-api-version: 1.16
+api-version: 1.17
 loadbefore:
  - ClassD
