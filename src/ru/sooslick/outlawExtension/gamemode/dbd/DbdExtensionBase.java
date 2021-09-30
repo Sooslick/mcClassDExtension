@@ -7,17 +7,13 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Shulker;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
@@ -30,17 +26,14 @@ import ru.sooslick.outlaw.util.CommonUtil;
 import ru.sooslick.outlaw.util.LoggerUtil;
 import ru.sooslick.outlaw.util.WorldUtil;
 import ru.sooslick.outlawExtension.ClassDExtension;
+import ru.sooslick.outlawExtension.Rollbackable;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class DbdExtensionBase implements GameModeBase {
+public class DbdExtensionBase implements GameModeBase, Rollbackable {
     private static final DbdExtensionConfig dbdConfig = new DbdExtensionConfig();
     private static final int COOLDOWN = 10;
 
@@ -50,7 +43,6 @@ public class DbdExtensionBase implements GameModeBase {
 
     Map<Block, Shulker> targetsMap;
     private int cooldown;
-    private int glowTimer;
 
     Score score;
 
@@ -63,20 +55,19 @@ public class DbdExtensionBase implements GameModeBase {
 
     @Override
     public void onIdle() {
-        targetsMap.forEach((k, v) -> v.remove());
+        rollbackShulkers();
+        ClassDExtension.getInstance().setLoadedGamemode(this);
         Bukkit.broadcastMessage(Messages.READY_FOR_GAME);
     }
 
     @Override
     public void onPreStart() {
-        targetsMap.forEach((k, v) -> k.setType(Material.AIR));
+        rollbackBlocks();
         WorldBorder wb = Bukkit.getWorlds().get(0).getWorldBorder();
         wb.setCenter(0, 0);
         wb.setSize(dbdConfig.playArea);
-    }
 
-    @Override
-    public void onGame() {
+        // generate new blocks
         targetsMap = new HashMap<>();
         Random random = CommonUtil.random;
         int bound = (int) (dbdConfig.playArea / 2.1);
@@ -105,7 +96,10 @@ public class DbdExtensionBase implements GameModeBase {
             int y = CommonUtil.random.nextInt(116) + 8;
             placeBlock(new Location(nether, x, y, z));
         }
+    }
 
+    @Override
+    public void onGame() {
         Engine engine = Engine.getInstance();
         Player outlaw = engine.getOutlaw().getPlayer();
 
@@ -124,17 +118,14 @@ public class DbdExtensionBase implements GameModeBase {
 
     @Override
     public void tick() {
-        glowImpl();
         compassImpl();
     }
 
     @Override
     public void unload() {
-        targetsMap.forEach((k, v) -> {
-            v.remove();
-            k.setType(Material.AIR);
-        });
+        rollbackAll();
         HandlerList.unregisterAll(events);
+        ClassDExtension.getInstance().setLoadedGamemode(null);
     }
 
     @Override
@@ -157,23 +148,14 @@ public class DbdExtensionBase implements GameModeBase {
         return "§6Obsidian Defense\n§eIn this game mode the Victim has to destroy a certain amount of special blocks that randomly spawn on the map.";
     }
 
+    @Override
+    public void rollback() {
+        rollbackAll();
+    }
+
     public void forceCompassUpdate() {
         cooldown = 0;
         compassImpl();
-    }
-
-    private void glowImpl() {
-        if (--glowTimer <= 0) {
-            glowTimer = COOLDOWN;
-            // since entities in map have weak references, find shulkers
-            List<Entity> foundEntities = new LinkedList<>();
-            targetsMap.keySet().stream().map(b -> b.getWorld().getNearbyEntities(b.getLocation(), 1, 1, 1)).forEach(foundEntities::addAll);
-            List<UUID> uuids = targetsMap.values().stream().map(Entity::getUniqueId).collect(Collectors.toList());
-            foundEntities.stream()
-                    .filter(e -> uuids.contains(e.getUniqueId()))
-                    .map(e -> (LivingEntity) e)
-                    .forEach(e -> e.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, COOLDOWN * 20 + 10, 1)));
-        }
     }
 
     private void compassImpl() {
@@ -242,10 +224,33 @@ public class DbdExtensionBase implements GameModeBase {
         Shulker e = (Shulker) selected.getWorld().spawnEntity(selected, EntityType.SHULKER);
         e.setAI(false);
         e.setInvulnerable(true);
+        e.setGlowing(true);
+        e.setInvisible(true);
+        e.setLootTable(null);
         e.setCustomName("Special block");
-        e.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, COOLDOWN * 20 + 10, 1));
-        glowTimer = 10;
         targetsMap.put(b, e);
         LoggerUtil.debug("Spawned special block at " + b.getLocation());
+        //todo realign far away blocks
+    }
+
+    private void rollbackAll() {
+        rollbackShulkers();
+        rollbackBlocks();
+        targetsMap.clear();
+    }
+
+    private void rollbackBlocks() {
+        targetsMap.keySet().forEach(b -> b.setType(Material.AIR));
+    }
+
+    private void rollbackShulkers() {
+        targetsMap.keySet().forEach(b -> {
+            b.getChunk().load();
+            b.getWorld().getNearbyEntities(b.getLocation(), 3, 3, 3).stream()
+                    .filter(e -> e.getType() == EntityType.SHULKER)
+                    .map(e -> (Shulker) e)
+                    //todo does not remove far away shulkers
+                    .forEach(Shulker::remove);
+        });
     }
 }

@@ -5,6 +5,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.sooslick.outlaw.Engine;
+import ru.sooslick.outlaw.gamemode.GameModeBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,6 +15,8 @@ public class ClassDExtension extends JavaPlugin {
     private static ClassDExtension instance;
     private static int jobId;
     private static int retries = 5;
+
+    private GameModeBase lastLoadedMode = null;
 
     public static ClassDExtension getInstance() {
         return instance;
@@ -53,5 +56,11 @@ public class ClassDExtension extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("ClassD Extension disabled.");
+        if (lastLoadedMode != null && lastLoadedMode instanceof Rollbackable)
+            ((Rollbackable) lastLoadedMode).rollback();
+    }
+
+    public void setLoadedGamemode(GameModeBase gmBase) {
+        lastLoadedMode = gmBase;
     }
 }

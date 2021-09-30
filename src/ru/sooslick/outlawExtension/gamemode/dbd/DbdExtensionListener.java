@@ -32,7 +32,7 @@ public class DbdExtensionListener implements Listener {
                     Bukkit.broadcastMessage("§cVictim just destroyed one of the targets! §6" + newScore + " blocks left");
                 //find entity by weak reference
                 LivingEntity rmEnt = base.targetsMap.get(b);
-                LivingEntity detectedEntity = (LivingEntity) b.getWorld().getNearbyEntities(b.getLocation(), 1, 1, 1).stream()
+                LivingEntity detectedEntity = (LivingEntity) b.getWorld().getNearbyEntities(b.getLocation(), 3, 3, 3).stream()
                         .filter(ent -> ent.getUniqueId().equals(rmEnt.getUniqueId()))
                         .findFirst()
                         .orElse(rmEnt);

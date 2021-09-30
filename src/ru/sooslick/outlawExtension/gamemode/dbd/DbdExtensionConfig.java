@@ -16,7 +16,9 @@ public class DbdExtensionConfig implements GameModeConfig {
 
     @Override
     public void readConfig() {
-        FileConfiguration cfg = ClassDExtension.getInstance().getConfig();
+        ClassDExtension plugin = ClassDExtension.getInstance();
+        plugin.reloadConfig();
+        FileConfiguration cfg = plugin.getConfig();
 
         int oldPlayArea = playArea;
         int oldTotalOverworldBlocks = totalOverworldBlocks;
@@ -30,7 +32,7 @@ public class DbdExtensionConfig implements GameModeConfig {
         requiredBlocks = cfg.getInt("requiredBlocks", 5);
 
         //validate
-        int spawnArea = Cfg.spawnDistance + Cfg.spawnRadius;
+        int spawnArea = (Cfg.spawnDistance + Cfg.spawnRadius) * 2;
         if (playArea < spawnArea) playArea = spawnArea + 15;
         if (totalOverworldBlocks < 0) totalOverworldBlocks = 0;
         if (totalNetherBlocks < 0) totalNetherBlocks = 0;
