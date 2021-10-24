@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Shulker;
@@ -119,6 +120,16 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
     @Override
     public void tick() {
         compassImpl();
+
+        // realign shulkers. Pretty weird solution to hook on cooldown variable to check every ten seconds
+        if (cooldown == 1) {
+            for (Map.Entry<Block, Shulker> entry : targetsMap.entrySet()) {
+                if (entry.getValue().getLocation().getBlockY() != entry.getKey().getLocation().getBlockY()) {
+                    entry.getValue().teleport(entry.getKey().getLocation());
+                    LoggerUtil.debug("fixed misaligned shulker at " + entry.getKey().getLocation());
+                }
+            }
+        }
     }
 
     @Override
@@ -219,6 +230,7 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
     }
 
     private void placeBlock(Location selected) {
+        selected.getChunk().addPluginChunkTicket(ClassDExtension.getInstance());
         Block b = selected.getBlock();
         b.setType(Material.OBSIDIAN);
         Shulker e = (Shulker) selected.getWorld().spawnEntity(selected, EntityType.SHULKER);
@@ -240,17 +252,14 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
     }
 
     private void rollbackBlocks() {
-        targetsMap.keySet().forEach(b -> b.setType(Material.AIR));
+        targetsMap.keySet().forEach(b -> {
+            b.setType(Material.AIR);
+            // todo potential bug: one chunk can contain multiple special blocks
+            b.getChunk().removePluginChunkTicket(ClassDExtension.getInstance());
+        });
     }
 
     private void rollbackShulkers() {
-        targetsMap.keySet().forEach(b -> {
-            b.getChunk().load();
-            b.getWorld().getNearbyEntities(b.getLocation(), 3, 3, 3).stream()
-                    .filter(e -> e.getType() == EntityType.SHULKER)
-                    .map(e -> (Shulker) e)
-                    //todo does not remove far away shulkers
-                    .forEach(Shulker::remove);
-        });
+        targetsMap.values().forEach(Entity::remove);
     }
 }
