@@ -56,7 +56,7 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
 
     @Override
     public void onIdle() {
-        rollbackShulkers();
+        rollbackAll();
         ClassDExtension.getInstance().setLoadedGamemode(this);
         Bukkit.broadcastMessage(Messages.READY_FOR_GAME);
     }
@@ -242,7 +242,6 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
         e.setCustomName("Special block");
         targetsMap.put(b, e);
         LoggerUtil.debug("Spawned special block at " + b.getLocation());
-        //todo realign far away blocks
     }
 
     private void rollbackAll() {
@@ -254,7 +253,6 @@ public class DbdExtensionBase implements GameModeBase, Rollbackable {
     private void rollbackBlocks() {
         targetsMap.keySet().forEach(b -> {
             b.setType(Material.AIR);
-            // todo potential bug: one chunk can contain multiple special blocks
             b.getChunk().removePluginChunkTicket(ClassDExtension.getInstance());
         });
     }

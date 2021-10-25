@@ -1,6 +1,7 @@
 package ru.sooslick.outlawExtension.gamemode.dbd;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -31,10 +32,16 @@ public class DbdExtensionListener implements Listener {
                 else
                     Bukkit.broadcastMessage("§cVictim just destroyed one of the targets! §6" + newScore + " blocks left");
                 base.targetsMap.get(b).remove();
-                b.getChunk().removePluginChunkTicket(ClassDExtension.getInstance());
                 base.targetsMap.remove(b);
                 base.forceCompassUpdate();
-                break;
+
+                // check should plugin unload chink
+                Chunk forUnload = b.getChunk();
+                for (Block test : base.targetsMap.keySet())
+                    if (test.getChunk().equals(forUnload))
+                        return;
+                b.getChunk().removePluginChunkTicket(ClassDExtension.getInstance());
+                return;
             }
         }
     }
